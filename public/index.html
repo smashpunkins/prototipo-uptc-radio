@@ -101,47 +101,62 @@
     }
 
     function renderPrograms(programs) {
-      const container = document.getElementById('programs');
-      container.innerHTML = '';
-      allCards = [];
+  const container = document.getElementById('programs');
+  container.innerHTML = '';
+  allCards = [];
 
-      if (programs.length === 0) {
-        container.innerHTML = '<p>No se encontraron resultados.</p>';
-        return;
+  if (programs.length === 0) {
+    container.innerHTML = '<p>No se encontraron resultados.</p>';
+    return;
+  }
+
+  programs.forEach((p, index) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <h2>${p.titulo}</h2>
+      <div class="details">
+        <p><strong>Fecha:</strong> ${new Date(p.fecha).toLocaleDateString()}</p>
+        <p><strong>Temas:</strong> ${p.temas.join(', ')}</p>
+        <p><strong>Participantes:</strong> ${p.participantes.join(', ')}</p>
+        <audio controls src="/audios/${encodeURIComponent(p.archivo)}"></audio>
+      </div>
+    `;
+
+    card.querySelector('h2').addEventListener('click', () => {
+      card.classList.toggle('open');
+    });
+
+    container.appendChild(card);
+    allCards.push(card);
+  });
+
+  const allAudios = container.querySelectorAll('audio');
+  allAudios.forEach((audio, index) => {
+    const program = programs[index];
+    const artist = program.participantes.join(', ');
+    const titlePlaying = `${program.titulo} – ${artist}`;
+    const titlePaused = `⏸️ Pausado – ${program.titulo}`;
+
+    audio.addEventListener('play', () => {
+      allAudios.forEach(other => {
+        if (other !== audio) other.pause();
+      });
+      document.title = titlePlaying;
+    });
+
+    audio.addEventListener('pause', () => {
+      // Only update title if not at the end
+      if (!audio.ended && !audio.seeking && audio.currentTime > 0) {
+        document.title = titlePaused;
       }
+    });
 
-      programs.forEach(p => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <h2>${p.titulo}</h2>
-          <div class="details">
-            <p><strong>Fecha:</strong> ${new Date(p.fecha).toLocaleDateString()}</p>
-            <p><strong>Temas:</strong> ${p.temas.join(', ')}</p>
-            <p><strong>Participantes:</strong> ${p.participantes.join(', ')}</p>
-            <audio controls src="/audios/${encodeURIComponent(p.archivo)}"></audio>
-          </div>
-        `;
-
-        // Toggle al hacer click en el título
-        card.querySelector('h2').addEventListener('click', () => {
-          card.classList.toggle('open');
-        });
-
-        container.appendChild(card);
-        allCards.push(card);
-      });
-
-      // 🔇 Asegura que solo un audio suene a la vez
-      const allAudios = container.querySelectorAll('audio');
-      allAudios.forEach(audio => {
-        audio.addEventListener('play', () => {
-          allAudios.forEach(other => {
-            if (other !== audio) other.pause();
-          });
-        });
-      });
-    }
+    audio.addEventListener('ended', () => {
+      document.title = 'Radio UPTC - Catálogo';
+    });
+  });
+}
 
     function applyFilters() {
       const title = document.getElementById('filterTitle').value.toLowerCase();
