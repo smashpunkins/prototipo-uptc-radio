@@ -7,21 +7,21 @@ const Programa = require('./models/Programa');
 const app = express();
 app.use(express.json());
 
-// 👉 Conexión a MongoDB
+// Conexión MongoDB
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
-  .then(() => console.log('✅ MongoDB conectado'))
-  .catch(console.error);
+.then(() => console.log('✅ MongoDB conectado'))
+.catch(err => console.error('❌ MongoDB error:', err));
 
-// 👉 Servir archivos estáticos desde /public
+// 👉 Servir archivos estáticos (HTML, CSS, JS, audios)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 👉 Servir audios específicamente desde /audios
+// 👉 Servir audios desde subcarpeta
 app.use('/audios', express.static(path.join(__dirname, 'public/audios')));
 
-// 👉 API: Obtener todos los programas
+// API - Obtener programas
 app.get('/api/programas', async (req, res) => {
   try {
     const programas = await Programa.find();
@@ -31,7 +31,7 @@ app.get('/api/programas', async (req, res) => {
   }
 });
 
-// 👉 API: Crear nuevo programa
+// API - Crear nuevo programa
 app.post('/api/programas', async (req, res) => {
   try {
     const { titulo, fecha, archivo, temas, participantes } = req.body;
@@ -43,12 +43,12 @@ app.post('/api/programas', async (req, res) => {
   }
 });
 
-// 👉 Fallback: enviar index.html en caso de que no se encuentre otra ruta
+// 👉 Fallback: sirve index.html si no hay otras rutas
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// 👉 Iniciar servidor
+// Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor en puerto ${PORT}`);
