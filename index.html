@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Radio UPTC - Catálogo</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #121212;
+      color: white;
+    }
+    header {
+      background: #1DB954;
+      padding: 1rem 2rem;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    .container {
+      padding: 2rem;
+      max-width: 1000px;
+      margin: auto;
+    }
+    .search {
+      margin-bottom: 1.5rem;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .search input {
+      flex: 1;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 8px;
+    }
+    .controls {
+      margin-bottom: 2rem;
+    }
+    .controls button {
+      background-color: #1DB954;
+      color: black;
+      border: none;
+      padding: 0.7rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .controls button:hover {
+      background-color: #1aa34a;
+    }
+    .card {
+      background: #1e1e1e;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      transition: 0.3s;
+    }
+    .card:hover {
+      background: #2a2a2a;
+    }
+    .card h2 {
+      margin: 0;
+      cursor: pointer;
+    }
+    .details {
+      display: none;
+      margin-top: 1rem;
+    }
+    .card.open .details {
+      display: block;
+    }
+    audio {
+      width: 100%;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header>🎙️ Radio UPTC</header>
+  <div class="container">
+    <div class="search">
+      <input type="text" id="filterTitle" placeholder="Buscar título">
+      <input type="text" id="filterTopics" placeholder="Buscar temas">
+      <input type="text" id="filterGuests" placeholder="Buscar participantes">
+    </div>
+    <div class="controls">
+      <button onclick="toggleAll()">Expandir / Colapsar todo</button>
+    </div>
+    <div id="programs">Cargando programas...</div>
+  </div>
+
+  <script>
+    let allPrograms = [];
+    let allCards = [];
+
+    async function loadPrograms() {
+      const res = await fetch('/api/programas');
+      allPrograms = await res.json();
+      renderPrograms(allPrograms);
+    }
+
+    function renderPrograms(programs) {
+      const container = document.getElementById('programs');
+      container.innerHTML = '';
+      allCards = [];
+
+      if (programs.length === 0) {
+        container.innerHTML = '<p>No se encontraron resultados.</p>';
+        return;
+      }
+
+      programs.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <h2>${p.titulo}</h2>
+          <div class="details">
+            <p><strong>Fecha:</strong> ${new Date(p.fecha).toLocaleDateString()}</p>
+            <p><strong>Temas:</strong> ${p.temas.join(', ')}</p>
+            <p><strong>Participantes:</strong> ${p.participantes.join(', ')}</p>
+            <audio controls src="/audios/${encodeURIComponent(p.archivo)}"></audio>
+          </div>
+        `;
+
+        // Toggle al hacer click en el título
+        card.querySelector('h2').addEventListener('click', () => {
+          card.classList.toggle('open');
+        });
+
+        container.appendChild(card);
+        allCards.push(card);
+      });
+
+      // 🔇 Asegura que solo un audio suene a la vez
+      const allAudios = container.querySelectorAll('audio');
+      allAudios.forEach(audio => {
+        audio.addEventListener('play', () => {
+          allAudios.forEach(other => {
+            if (other !== audio) other.pause();
+          });
+        });
+      });
+    }
+
+    function applyFilters() {
+      const title = document.getElementById('filterTitle').value.toLowerCase();
+      const topics = document.getElementById('filterTopics').value.toLowerCase();
+      const guests = document.getElementById('filterGuests').value.toLowerCase();
+
+      const filtered = allPrograms.filter(p =>
+        p.titulo.toLowerCase().includes(title) &&
+        p.temas.join(', ').toLowerCase().includes(topics) &&
+        p.participantes.join(', ').toLowerCase().includes(guests)
+      );
+      renderPrograms(filtered);
+    }
+
+    function toggleAll() {
+      const anyOpen = allCards.some(card => card.classList.contains('open'));
+      allCards.forEach(card => {
+        if (anyOpen) {
+          card.classList.remove('open');
+        } else {
+          card.classList.add('open');
+        }
+      });
+    }
+
+    document.getElementById('filterTitle').addEventListener('input', applyFilters);
+    document.getElementById('filterTopics').addEventListener('input', applyFilters);
+    document.getElementById('filterGuests').addEventListener('input', applyFilters);
+
+    loadPrograms();
+  </script>
+</body>
+</html>
