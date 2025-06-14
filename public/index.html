@@ -138,12 +138,29 @@
     const titlePlaying = `${program.titulo} – ${artist}`;
     const titlePaused = `⏸️ Pausado – ${program.titulo}`;
 
-    audio.addEventListener('play', () => {
-      allAudios.forEach(other => {
-        if (other !== audio) other.pause();
-      });
-      document.title = titlePlaying;
+audio.addEventListener('play', () => {
+  allAudios.forEach(other => {
+    if (other !== audio) other.pause();
+  });
+
+  document.title = titlePlaying;
+
+  // Mobile lock screen metadata (without artwork)
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: program.titulo,
+      artist: artist,
+      album: 'Radio UPTC'
     });
+
+    navigator.mediaSession.setActionHandler('pause', () => {
+      audio.pause();
+    });
+    navigator.mediaSession.setActionHandler('play', () => {
+      audio.play();
+    });
+  }
+});
 
     audio.addEventListener('pause', () => {
       // Only update title if not at the end
