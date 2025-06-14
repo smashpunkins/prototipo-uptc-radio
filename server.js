@@ -40,10 +40,9 @@ app.post('/api/programas', async (req, res) => {
   }
 });
 
-// 👉 Fallback para SPA o páginas HTML (sirve index.html en / si no hay rutas previas que coincidan)
-//app.get('*', (req, res) => {
- // res.sendFile(path.join(__dirname, 'public', 'index.html'));
-//});
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
